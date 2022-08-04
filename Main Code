@@ -1,0 +1,1225 @@
+<h1 style= "color:Green">News Category Classification</h1>
+
+<p>News Category Classifier Python Notebook which was made using scikit-learn and NLTK libraries of Python. In this notebook, the News articles are classified into two categories:- "TRAVEL", "RELIGION" </p>
+
+# Importing pandas package
+import pandas as pandasForSortingCSV
+# Importing the dependencies.
+import nltk
+import matplotlib
+import numpy as np
+from nltk import *
+from nltk.corpus import stopwords
+import pandas as pd
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+import re
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('wordnet')
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+from gensim.models import Word2Vec
+from sklearn.pipeline import Pipeline
+from sklearn.svm import SVC
+from sklearn.naive_bayes import GaussianNB
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.neural_network import MLPClassifier
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
+import warnings
+warnings.filterwarnings("ignore")
+# from wordcloud import WordCloud
+%matplotlib inline
+plt.rcParams['figure.figsize'] = (8,6)
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_selection import chi2
+import numpy as np
+from nltk.corpus import stopwords
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.naive_bayes import MultinomialNB
+# to convert the text into vectors
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, classification_report, f1_score, confusion_matrix
+import pickle
+from pickle import dump
+import seaborn as sns
+import matplotlib.pyplot as plt   
+import pandas as pd   
+from IPython.display import display_html 
+import nltk
+nltk.download('omw-1.4')
+from sklearn.model_selection import KFold
+from sklearn.model_selection import cross_val_score
+import numpy as np # linear algebra
+import pandas as pd # data processing, CSV file I/O 
+import matplotlib.pyplot as plt
+plt.rcParams['figure.figsize'] = (6,6)
+from keras import backend as K
+from tensorflow.keras.layers import Layer, InputSpec
+from keras import initializers, regularizers, constraints
+from keras.layers import Dense, Input, LSTM, Bidirectional, Activation, Conv1D, GRU, TimeDistributed
+from keras.layers import Dropout, Embedding, GlobalMaxPooling1D, MaxPooling1D, Add, Flatten, SpatialDropout1D
+from keras.layers import GlobalAveragePooling1D, BatchNormalization, concatenate
+from keras.layers import Reshape, Concatenate, Lambda, Average
+from keras.models import Sequential, Model, load_model
+from keras.callbacks import ModelCheckpoint
+from keras.initializers import Constant
+from tensorflow.keras.layers import concatenate 
+from keras.preprocessing import sequence
+from keras.preprocessing.text import Tokenizer, text_to_word_sequence
+from keras.utils import np_utils
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix
+import os
+from tensorflow.keras.preprocessing import sequence
+
+<p style= "color:blue"><b>TASK 1 </b></p>
+
+# Loading dataset
+df=pd.read_csv('20204585.csv',
+                        encoding='Latin1',dtype=str)
+df
+
+df.groupby('category').category.count() #Calculating the count for both the news categories
+
+print('NUMBER OF SAMPLES IN EACH CATEGORY: \n')
+sns.countplot(df.category) #Plotting a bar graph to visualize the number of samples in each news category 
+
+#Calculating the length of Headlines per row
+df['news_length'] = df['headline'].str.len()
+df['news_length']
+
+sns.distplot(df['news_length']).set_title('News length Distribution')#plotting News Length for visualization 
+
+<h2>Exploration of the Data </h2>
+<p>Natural Language Toolkit is used to conduct numerous operations for text data preparation such as tokenization, stopword removal, stemming, and so on.</p>
+
+#Getting the category values, in my case there are two categories.
+#Dividing the data into two dataframes
+rTravel = df[df['category'] == 'TRAVEL']
+rReligion = df[df['category'] == 'RELIGION']
+
+#Converting from dataframe to list
+rTravel['headline'].values.tolist()
+rReligion['headline'].values.tolist()
+
+#Method to convert list to String
+
+def listToString(s):
+    str1=" "
+    return(str1.join(s))
+
+
+<p>The goal of data preparation is to convert data into the finest machine learning format possible. It is critical to clean the data because the model only learns from that data, so if we feed inconsistent, inappropriate data to the model, it will only return junk, so it is required to ensure that the data does not contain any unseen problem.</p>
+
+# Tokenizing and converting the data to lowercase
+tokensTravel = nltk.word_tokenize(str(rTravel['headline'].values.tolist()))
+tokenReligion= nltk.word_tokenize(str(rReligion['headline'].values.tolist()))
+tokensTravelLowerCase = [t.lower() for t in tokensTravel]
+tokenReligionLowerCase= [t.lower() for t in tokenReligion] 
+
+# Removing punctuations from the data
+
+removepuncTravel = [t for t in tokensTravelLowerCase if t.isalnum()]
+removePuncReligion=[t for t in tokenReligionLowerCase if t.isalnum()]
+
+# Removing stop words from the data 
+# stop words are words such as "a", "his", "that", & "and"
+# that do not contribute to the underlying topic or classification of the text and therefore should be filtered out.
+# Because there are fewer and only relevant words remaining, stopword elimination may help improve performance. 
+# As a result, the classification accuracy could be improved.
+removeStopWordsTravel = [t for t in removepuncTravel if t not in stopwords.words('english')] 
+removeStopWordsReligion= [t for t in removePuncReligion if t not in stopwords.words('english')] 
+
+#Method to find the Frequency Distribution for most common words used
+#We use frequency distribution to visualize or illustrate the data collected in a sample.
+#For Travel News Category 
+
+def findFrequencyDistribution(data,number):
+    from nltk.probability import FreqDist
+    fdist_f = FreqDist(removeStopWordsTravel)
+    return fdist_f.most_common(number)
+
+
+print(findFrequencyDistribution(removeStopWordsTravel,100))
+
+#For Religion News Category 
+def findFrequencyDistribution(data,number):
+    from nltk.probability import FreqDist
+    fdist_f = FreqDist(removeStopWordsReligion)
+    return fdist_f.most_common(number)
+print(findFrequencyDistribution(removeStopWordsReligion,50))
+
+
+<p style= "color:blue">Calculating average length of sentences. </p>
+<nav>
+    <p> Source : <a href = "https://python-forum.io/thread-11585.html">Python-Forum</a> </p>
+</nav>
+
+#Analysis of length of sentences in each category 
+#Method for calculating average length of sentences
+def get_average_sentence_length(text):
+    sentences = text.split(",")
+    words = text.split(" ")
+    if(sentences[len(sentences)-1]==""):
+        average_sentence_length = len(words)/len(sentences)-1
+    else:
+        average_sentence_length = len(words)/len(sentences)
+    return average_sentence_length
+#https://python-forum.io/thread-11585.html
+
+avgTravel=get_average_sentence_length(str(rTravel['headline'].values.tolist()))
+avgReligion=get_average_sentence_length(str(rReligion['headline'].values.tolist()))
+
+#Average length of sentences in Travel Category :7.08
+print(avgTravel)
+
+#Average length of sentences in Religion Category :7.63
+print(avgReligion)
+
+#wordcloud for frequent words
+from PIL import Image
+from wordcloud import WordCloud, ImageColorGenerator
+from os import path
+%matplotlib inline
+
+<p> Using a wordcloud data visualization approach to show text data in which the size of each word signifies its frequency or relevance. </p>
+<nav>
+    <p> Source : <a href = "https://github.com/adonovan7/BBCNewsClassification/blob/master/News_Classification_Project_Final_Draft.ipynb">GitHub</a> </p>
+</nav>
+
+travel = df[df['category'] == 'TRAVEL']
+wordcloud = WordCloud(background_color="white", width = 1000, height = 500).generate(''.join(str(travel["headline"])))
+plt.figure(figsize=(10,7))
+plt.imshow(wordcloud)
+plt.title("TRAVEL NEWS", fontsize=30)
+plt.axis("off")
+plt.show()
+#https://github.com/adonovan7/BBCNewsClassification/blob/master/News_Classification_Project_Final_Draft.ipynb
+
+religion = df[df['category'] == 'RELIGION']
+wordcloud = WordCloud(background_color="white", width = 1000, height = 500).generate(''.join(str(religion["headline"])))
+plt.figure(figsize=(10,7))
+plt.imshow(wordcloud)
+plt.title("RELIGION NEWS", fontsize=30)
+plt.axis("off")
+plt.show()
+
+<p style= "color:green"><b>Machine learning algorithms cannot work on the raw text directly. So, we need some feature extraction techniques to convert text into a matrix(or vector) of features.</b></p>
+
+#comparing against label - against category
+
+df = df.dropna() #The pandas dropna function allows us to drop rows & columns that contain missing values.
+
+df.isnull().any()
+
+#Associating Category names with numerical index and save it in new column category_id
+df['category_id']= df.category.astype("category").cat.codes
+df['category_id'] = df['category_id'].astype(float)
+df
+
+df['category_id'].unique()
+
+df['category_id']
+
+category_id_df = df[['category', 'category_id']].drop_duplicates().sort_values('category_id')
+
+category_id_df
+
+category_to_id = dict(category_id_df.values)
+id_to_category = dict(category_id_df[['category_id', 'category']].values)
+
+id_to_category
+
+from sklearn.feature_extraction.text import TfidfVectorizer
+tfidf = TfidfVectorizer(sublinear_tf=True, min_df=5, norm='l2', encoding='latin-1', ngram_range=(1, 2), stop_words='english')
+features = tfidf.fit_transform(df.headline).toarray() 
+labels = df.category_id 
+
+features.shape
+
+category_to_id.items()
+
+
+sorted(category_to_id.items())
+
+
+<p style= "color:blue">Feature Selection</p>
+<p style= "color:blue">Chi Square is a statistical technique, used for calculating correlation of features with outcome. The chi-square test helps you to solve the problem in feature selection by testing the relationship between the features.</p>
+<nav>
+    <p> Source : <a href = "https://www.kaggle.com/code/nxtasha/bbc-news-classification-natasha/notebook">Kaggle</a> </p>
+</nav>
+
+
+from sklearn.feature_selection import chi2
+import numpy as np
+N = 2
+for category, category_id in sorted(category_to_id.items()):
+  features_chi2 = chi2(features, labels == category_id)
+  indices = np.argsort(features_chi2[0])
+  feature_names = np.array(tfidf.get_feature_names())[indices]
+  unigrams = [v for v in feature_names if len(v.split(' ')) == 1]
+  bigrams = [v for v in feature_names if len(v.split(' ')) == 2]
+  print("# '{}':".format(category))
+  print("  . Most correlated unigrams:\n. {}".format('\n. '.join(unigrams[-N:])))
+  print("  . Most correlated bigrams:\n. {}".format('\n. '.join(bigrams[-N:])))
+
+X = df.loc[:,df.columns != 'category'] #storing all the columns except category in the variable X
+
+X.drop('Unnamed: 0', axis=1, inplace=True) #dropping the column unnamed:0
+
+X
+
+ytarget = df['category']
+
+ytarget
+
+ytarget.isnull().any()
+
+<p style= "color:blue"><b>TASK 2 and TASK 3</b></p>
+<p>Now we would be doing the train-test split using the 80:20 rule where 80% of the data goes to training and the rest 20% goes to testing.</p>
+<p>Splitting the entire dataset into three parts: Training-55%, Validation-25% and Testing-20%.</p>
+<p>Training Set: Set of data that is used to train and make the model learn the hidden features/patterns in the data.</p>
+<p>Validation Set: Set of data, separate from the training set, that is used to validate our model performance during training.</p>
+<p>Testing Set: Set of data used to test the model after completing the training.It provides an unbiased final model performance    metric in terms of accuracy, precision, etc.</p>
+
+X_train_plus_valid, X_test, y_train_plus_valid, y_test = train_test_split(X, ytarget, random_state=0, test_size = 0.20, train_size = 0.8)
+X_train, X_valid, y_train, y_valid = train_test_split(X_train_plus_valid, y_train_plus_valid, random_state=0, test_size = 0.25/0.8, train_size = 0.55/0.8)
+
+X_train_plus_valid
+
+y_train_plus_valid
+
+X_test
+
+y_test
+
+X_train
+
+y_train.isnull
+
+X_valid
+
+y_valid
+
+X_test
+
+y_valid
+
+from sklearn.model_selection import train_test_split
+#Creating three separate .csv files and saving the split dataset into it.
+X_train.to_csv('train.csv',index=False)
+X_valid.to_csv('valid.csv',index=False)
+X_test.to_csv('test.csv',index=False)
+
+<p style= "color:blue"> Loading the Train Dataset</p>
+
+#loading the train dataset for preprocessing steps
+traindata = pd.read_csv("train.csv",header=0)
+traindata
+
+#Data Preprocessing 
+#Converting all the data to lowercase
+#It helps to maintain the consistency flow during the NLP tasks and text mining.
+traindata = traindata.apply(lambda x: x.astype(str).str.lower())
+
+#Removing punctuations as they behave like noise in the text data since they have no semantic meaning.
+traindata["headline"] = traindata['headline'].str.replace('[^\w\s]','')
+
+traindata
+
+<p style= "color:blue"> Removing Stop Words for Headline: Removing these words helps the model to consider only key features. </p>
+<nav>
+    <p> Source : <a href = "https://www.datasnips.com/58/remove-stop-words-from-text-in-dataframe-column/">Datasnips</a> </p>
+</nav>
+
+#https://www.datasnips.com/58/remove-stop-words-from-text-in-dataframe-column
+from nltk.corpus import stopwords
+stop_words = stopwords.words('english')
+
+traindata['headline'] = traindata['headline'].apply(lambda x: ' '.join([word for word in str(x).split() if word not in (stop_words)]))
+
+traindata.replace('NaN','')
+
+#Dropping all the other columns except Headline and Category_id for training dataset
+traindata.drop('authors', axis=1, inplace=True)
+traindata.drop('link', axis=1, inplace=True)
+traindata.drop('short_description', axis=1, inplace=True)
+traindata.drop('date', axis=1, inplace=True)
+traindata.drop('news_length', axis=1, inplace=True)
+
+traindata['category_id'].unique()
+
+traindata['category_id'] = traindata['category_id'].astype(float)
+
+traindata['category_id'].isnull().any()
+
+traindata.count()
+
+<p style= "color:blue">Applying appropriate preprocessing steps to create a numeric representation of the data, suitable for binary classification.</p>
+<p style= "color:blue">Converting input data from its raw format (i.e. text) into vectors of real numbers which is the format that ML models support.</p>
+
+#TF-IDF is a numerical statistic that’s intended to reflect how important a word is to a document.
+tfidf_vect = TfidfVectorizer(analyzer='word', max_features=3000)
+
+x_tfidf = tfidf_vect.fit_transform(traindata['headline'])
+
+x_features = pd.DataFrame(x_tfidf.toarray())
+
+# splitting the data set to training and testing data set for binary classification
+xt_train, xt_test, yt_train, yt_test = train_test_split(x_features, traindata['category_id'], test_size=0.5)
+
+traindata['category_id'].isnull().any()
+
+yt_train.dtypes
+
+yt_train.isnull().any()
+
+traindata['category_id']
+
+xt_train
+
+yt_train.isnull().any()
+
+<p style= "color:blue">Selected two classifiers: Decision Tree and Random Forest</p>
+<p style= "color:blue">After evaluating both, Decision Tree and Random Forest gave accuracy of approx 82% and 90%, respectively. Next we are saving the models and will apply it on the validation dataset.(i.e, dtcmodel.pkl and rfcmodel.pkl)</p>
+
+import pickle
+from pickle import dump
+model_dtc = DecisionTreeClassifier(max_depth=500)
+model_dtc.fit(xt_train, yt_train)
+dump(model_dtc, open('dtcmodel.pkl', 'wb'))
+
+model_dtc = pickle.load(open('dtcmodel.pkl', 'rb'))
+
+score = model_dtc.predict(xt_test)
+result = accuracy_score(yt_test,score)
+print('Test Accuracy:', result)
+
+<p style= "color:blue">Using Confusion Matrix for error analysis of the Classification Models</p>
+<p>Calculating a Confusion Matrix will give a better idea of whether our classification model right and what types of errors it is making.</p>
+<p style= "color:blue">Keeping Accuracy as the primary metric. Model accuracy is the metric used to assess which model is the most effective in identifying correlations and patterns between variables in a dataset based on the input, or training, data. The better a model generalizes to 'unseen' data, the better its predictions and insights.</p>
+<p>We calculate our accuracy measure by adding our True Positive(TP) and True Negative(TN) and dividing by the total.</p>
+
+#Confusion Matrix on each model being tested for error analysis
+cm=confusion_matrix(yt_test, score)
+cm
+import seaborn as sns
+import matplotlib.pyplot as plt   
+
+ax= plt.subplot()
+sns.heatmap(cm, annot=True, fmt='g', ax=ax);
+
+ax.set_xlabel('Predicted');ax.set_ylabel('Actual');  
+ax.set_title('Confusion Matrix');
+TN, FP, FN, TP = confusion_matrix(yt_test, score).ravel()
+
+print('True Positive(TP)  = ', TP)
+print('False Positive(FP) = ', FP)
+print('True Negative(TN)  = ', TN)
+print('False Negative(FN) = ', FN)
+
+accuracy = (TP+TN) /(TP+FP+TN+FN)
+print('Accuracy of the binary classification = {:0.3f}'.format(accuracy))
+
+<p style= "color:blue">To see if different models erroneously categorize the same sentences, we generated a dataframe containing predictions for both models and showed it together using the html style tag.</p>
+
+df_DT = pd.DataFrame(score)
+df_DT.columns = ["Decision Tree"]
+df_DT
+
+yt_test.dtypes
+
+<p>Running Random Forest Classifier </p>
+
+import pickle
+from pickle import dump
+model_rfc = RandomForestClassifier()
+model_rfc.fit(xt_train, yt_train)
+dump(model_rfc, open('rfcmodel.pkl', 'wb'))
+
+model_rfc = pickle.load(open('rfcmodel.pkl', 'rb'))
+
+score = model_rfc.predict(xt_test)
+result = accuracy_score(yt_test,score)  
+print('Test Accuracy:', result)
+
+cm=confusion_matrix(yt_test, score) 
+cm
+import seaborn as sns
+import matplotlib.pyplot as plt   
+
+ax= plt.subplot()
+sns.heatmap(cm, annot=True, fmt='g', ax=ax); 
+
+# labels, title and ticks
+ax.set_xlabel('Predicted');ax.set_ylabel('Actual');  
+ax.set_title('Confusion Matrix');
+TN, FP, FN, TP = confusion_matrix(yt_test, score).ravel()
+
+print('True Positive(TP)  = ', TP)
+print('False Positive(FP) = ', FP)
+print('True Negative(TN)  = ', TN)
+print('False Negative(FN) = ', FN)
+
+accuracy =  (TP+TN) /(TP+FP+TN+FN)
+
+print('Accuracy of the binary classification = {:0.3f}'.format(accuracy))
+#ax.xaxis.set_ticklabels(['<=50K', '>50K']); ax.yaxis.set_ticklabels(['<=50K','>50K' ]);
+
+df_RF = pd.DataFrame(score)
+df_RF.columns = ["Random Forest"]
+df_RF
+
+<p style= "color:blue">Merging dataframes to show both the Decision Tree and Random Forest Classifier predictions for each text.</p>
+   <p> Source : <a href = "https://softhints.com/display-two-pandas-dataframes-side-by-side-jupyter-notebook/">Softhints</a> </p>
+</nav>
+
+import pandas as pd   
+from IPython.display import display_html 
+
+df_DT_styler = df_DT.style.set_table_attributes("style='display:inline'").set_caption('df_DT')
+df_RF_styler = df_RF.style.set_table_attributes("style='display:inline'").set_caption('df_RF')
+#df_LR_styler = df_LR.style.set_table_attributes("style='display:inline'").set_caption('df_LR')
+
+display_html(df_DT_styler._repr_html_()+df_RF_styler._repr_html_(), raw=True)
+
+
+#load valid data
+validdata = pd.read_csv("valid.csv",header=0)
+validdata
+
+<p style= "color:blue"> Loading Validation Dataset</p>
+
+#data preprocessing 
+#converting the data to lowercase
+validdata = validdata.apply(lambda x: x.astype(str).str.lower())
+
+validdata
+
+#Removing punctuations from the data
+validdata["headline"] = validdata['headline'].str.replace('[^\w\s]','')
+validdata
+
+#https://www.datasnips.com/58/remove-stop-words-from-text-in-dataframe-column/
+from nltk.corpus import stopwords
+stop_words = stopwords.words('english')
+
+validdata['headline'] = validdata['headline'].apply(lambda x: ' '.join([word for word in str(x).split() if word not in (stop_words)]))
+
+validdata
+
+#dropping all other columns except Headline as we did for Train Dataset
+validdata.drop('authors', axis=1, inplace=True)
+validdata.drop('date', axis=1, inplace=True)
+validdata.drop('link', axis=1, inplace=True)
+validdata.drop('short_description', axis=1, inplace=True)
+validdata.drop('news_length', axis=1, inplace=True)
+
+validdata['category_id'] = validdata['category_id'].astype(float)
+
+validdata
+
+validdata.count()
+
+tfidf_vect = TfidfVectorizer(analyzer='word',max_features=3000)
+
+xv_tfidf = tfidf_vect.fit_transform(validdata['headline'])
+
+xv_features = pd.DataFrame(xv_tfidf.toarray())
+
+# splitting the validation dataset to training and testing data 
+xv_train, xv_test, yv_train, yv_test = train_test_split(xv_features, validdata['category_id'], test_size=0.5)
+
+yv_test.dtypes
+
+validdata['category_id']
+
+xv_train
+
+<p style= "color:blue">Running the saved classifier models on Validation Dataset and checking the accuracy score for both the models.</p>
+
+model_dtc = DecisionTreeClassifier(max_depth=500)
+model_dtc.fit(xv_train, yv_train)
+dump(model_dtc, open('dtcmodel.pkl', 'wb'))
+
+model_dtc = pickle.load(open('dtcmodel.pkl', 'rb'))
+
+score = model_dtc.predict(xv_test)
+result = accuracy_score(yv_test,score)
+print('Test Accuracy:', result)
+
+cm=confusion_matrix(yv_test, score) #you will need to change the latter to your desired output
+cm
+import seaborn as sns
+import matplotlib.pyplot as plt   
+
+ax= plt.subplot()
+sns.heatmap(cm, annot=True, fmt='g', ax=ax);  #Don't worry too much about the arguments here - we will return to this! 
+
+# labels, title and ticks
+ax.set_xlabel('Predicted');ax.set_ylabel('Actual');  
+ax.set_title('Confusion Matrix');
+TN, FP, FN, TP = confusion_matrix(yv_test, score).ravel()
+
+print('True Positive(TP)  = ', TP)
+print('False Positive(FP) = ', FP)
+print('True Negative(TN)  = ', TN)
+print('False Negative(FN) = ', FN)
+
+accuracy =  (TP+TN) /(TP+FP+TN+FN)
+
+print('Accuracy of the binary classification = {:0.3f}'.format(accuracy))
+#ax.xaxis.set_ticklabels(['<=50K', '>50K']); ax.yaxis.set_ticklabels(['<=50K','>50K' ]);
+
+df_DTv = pd.DataFrame(score)
+df_DTv.columns = ["Decision Tree"]
+df_DTv
+
+model_rfc = RandomForestClassifier()
+model_rfc.fit(xv_train, yv_train)
+dump(model_rfc, open('rfcmodel.pkl', 'wb'))
+
+model_rfc = pickle.load(open('rfcmodel.pkl', 'rb'))
+
+score = model_rfc.predict(xv_test)
+result = accuracy_score(yv_test,score)
+print('Test Accuracy:', result)
+
+cm=confusion_matrix(yv_test, score) #you will need to change the latter to your desired output
+cm
+import seaborn as sns
+import matplotlib.pyplot as plt   
+
+ax= plt.subplot()
+sns.heatmap(cm, annot=True, fmt='g', ax=ax);  #Don't worry too much about the arguments here - we will return to this! 
+
+# labels, title and ticks
+ax.set_xlabel('Predicted');ax.set_ylabel('Actual');  
+ax.set_title('Confusion Matrix');
+TN, FP, FN, TP = confusion_matrix(yv_test, score).ravel()
+
+print('True Positive(TP)  = ', TP)
+print('False Positive(FP) = ', FP)
+print('True Negative(TN)  = ', TN)
+print('False Negative(FN) = ', FN)
+
+accuracy =  (TP+TN) /(TP+FP+TN+FN)
+
+print('Accuracy of the binary classification = {:0.3f}'.format(accuracy))
+#ax.xaxis.set_ticklabels(['<=50K', '>50K']); ax.yaxis.set_ticklabels(['<=50K','>50K' ]);
+
+df_RFv = pd.DataFrame(score)
+df_RFv.columns = ["Random Forest"]
+df_RFv
+
+#Merging dataframes
+#https://softhints.com/display-two-pandas-dataframes-side-by-side-jupyter-notebook/
+import pandas as pd   
+from IPython.display import display_html 
+
+
+df_DTv_styler = df_DT.style.set_table_attributes("style='display:inline'").set_caption('df_DTv')
+df_RFv_styler = df_RF.style.set_table_attributes("style='display:inline'").set_caption('df_RFv')
+#df_LRv_styler = df_LR.style.set_table_attributes("style='display:inline'").set_caption('df_LRv')
+
+
+display_html(df_DTv_styler._repr_html_()+df_RFv_styler._repr_html_(), raw=True)
+
+
+<p style= "color:blue">Evaluating performance of each model on both train and validation dataset:</p>
+<p>Decision Tree Classifier- DTC has an accuracy of around approx 82% for the training dataset and around approx 71% for the validation dataset.<p/>
+<p>Random Forest Classifier- RFC had an accuracy of around approx 90% for the training dataset and around approx 80% for the validation dataset.</p>
+<p>Since adding additional data to your analysis can help you deliver better findings, the training dataset has higher accuracy than the validation dataset.</p>
+<p>"Random forest is preferred over decision tree because decision trees are prone to overfitting, especially when a tree is exceptionally deep, while random forest has the capacity to restrict overfitting without significantly increasing error due to bias. Other advantages of the random forest classifier include its ability to run efficiently on huge datasets and provide higher accuracy than other classification methods."</p>
+
+<h3>Applying one modification to the Train Dataset, specifically adding one more step and performing Lemmatization</h3>
+
+traindata['headline'] = traindata['headline'] .str.lower()
+
+traindata['headline'] = traindata['headline'].str.replace(r'[^\w\s]+','')
+
+import nltk
+from nltk.corpus import stopwords
+stop = stopwords.words('english')
+
+traindata['headline'] = traindata['headline'].apply(lambda x: ' '.join([word for word in str(x).split() if word not in (stop)]))
+
+import nltk
+nltk.download('omw-1.4')
+
+<p style= "color:blue"><b>Performing lemmatization on the data as it provides better results by performing an analysis that depends on the word's part-of-speech and producing real, dictionary words.</b></p>
+
+lemmatizer = nltk.stem.WordNetLemmatizer()
+traindata['headline'] = [lemmatizer.lemmatize(t) for t in traindata['headline']]
+
+traindata['headline']
+
+tfidf_vect = TfidfVectorizer(analyzer='word',max_features=3000)
+
+xt_tfidf = tfidf_vect.fit_transform(traindata['headline'])
+
+xt_features = pd.DataFrame(xt_tfidf.toarray())
+
+x_train2, x_test2, y_train2, y_test2 = train_test_split(xt_features, traindata['category_id'], test_size=0.5)
+
+x_train2
+
+model_dtct = DecisionTreeClassifier(max_depth=500)
+model_dtct.fit(x_train2, y_train2)
+dump(model_dtct, open('dtctmodel.pkl', 'wb'))
+
+model_dtct = pickle.load(open('dtctmodel.pkl', 'rb'))
+
+score = model_dtct.predict(x_test2)
+result = accuracy_score(y_test2,score)
+print('Test Accuracy:', result)
+
+cm=confusion_matrix(y_test2, score) #you will need to change the latter to your desired output
+cm
+import seaborn as sns
+import matplotlib.pyplot as plt   
+
+ax= plt.subplot()
+sns.heatmap(cm, annot=True, fmt='g', ax=ax);  #Don't worry too much about the arguments here - we will return to this! 
+
+# labels, title and ticks
+ax.set_xlabel('Predicted');ax.set_ylabel('Actual');  
+ax.set_title('Confusion Matrix');
+TN, FP, FN, TP = confusion_matrix(y_test2, score).ravel()
+
+print('True Positive(TP)  = ', TP)
+print('False Positive(FP) = ', FP)
+print('True Negative(TN)  = ', TN)
+print('False Negative(FN) = ', FN)
+
+accuracy =  (TP+TN) /(TP+FP+TN+FN)
+
+print('Accuracy of the binary classification = {:0.3f}'.format(accuracy))
+
+model_rfct = RandomForestClassifier()
+model_rfct.fit(x_train2, y_train2)
+dump(model_rfct, open('rfctmodel.pkl', 'wb'))
+
+model_rfct = pickle.load(open('rfctmodel.pkl', 'rb'))
+
+score = model_rfct.predict(x_test2)
+result = accuracy_score(y_test2,score)
+print('Test Accuracy:', result)
+
+cm=confusion_matrix(y_test2, score) #you will need to change the latter to your desired output
+cm
+import seaborn as sns
+import matplotlib.pyplot as plt   
+
+ax= plt.subplot()
+sns.heatmap(cm, annot=True, fmt='g', ax=ax);  #Don't worry too much about the arguments here - we will return to this! 
+
+# labels, title and ticks
+ax.set_xlabel('Predicted');ax.set_ylabel('Actual');  
+ax.set_title('Confusion Matrix');
+TN, FP, FN, TP = confusion_matrix(y_test2, score).ravel()
+
+print('True Positive(TP)  = ', TP)
+print('False Positive(FP) = ', FP)
+print('True Negative(TN)  = ', TN)
+print('False Negative(FN) = ', FN)
+
+accuracy =  (TP+TN) /(TP+FP+TN+FN)
+
+print('Accuracy of the binary classification = {:0.3f}'.format(accuracy))
+
+<p style= "color:blue">Even after adding one more extra preprocessing step, lemmatization, there was no significant change on the training dataset, since the accuracy for both models was nearly identical to the prior models evaluated without lemmatization.</p>
+
+<h3>Applying one modification to the Validation Dataset, specifically adding one more step and performing Lemmatization</h3>
+
+validdata['headline'] = validdata['headline'] .str.lower()
+
+validdata['headline'] = validdata['headline'].str.replace(r'[^\w\s]+','')
+
+import nltk
+from nltk.corpus import stopwords
+stop = stopwords.words('english')
+
+validdata['headline'] = validdata['headline'].apply(lambda x: ' '.join([word for word in str(x).split() if word not in (stop)]))
+
+<p style= "color:blue"><b>Performing lemmatization on the data as it provides better results by performing an analysis that depends on the word's part-of-speech and producing real, dictionary words.</b></p>
+
+lemmatizer = nltk.stem.WordNetLemmatizer()
+validdata['headline'] = [lemmatizer.lemmatize(t) for t in validdata['headline']]
+
+validdata['headline']
+
+tfidf_vect = TfidfVectorizer(analyzer='word', max_features=3000)
+
+xv2_tfidf = tfidf_vect.fit_transform(validdata['headline'])
+
+xv2_features = pd.DataFrame(xv2_tfidf.toarray())
+
+xv2_train, xv2_test, yv2_train, yv2_test = train_test_split(xv2_features, validdata['category_id'], test_size=0.5)
+
+xv2_train
+
+model_dtct = DecisionTreeClassifier(max_depth=500)
+model_dtct.fit(xv2_train, yv2_train)
+dump(model_dtct, open('dtctmodel.pkl', 'wb'))
+
+model_dtct = pickle.load(open('dtctmodel.pkl', 'rb'))
+
+score = model_dtct.predict(xv2_test)
+result = accuracy_score(yv2_test,score)
+print('Test Accuracy:', result)
+
+cm=confusion_matrix(yv2_test, score) #you will need to change the latter to your desired output
+cm
+import seaborn as sns
+import matplotlib.pyplot as plt   
+
+ax= plt.subplot()
+sns.heatmap(cm, annot=True, fmt='g', ax=ax);  #Don't worry too much about the arguments here - we will return to this! 
+
+# labels, title and ticks
+ax.set_xlabel('Predicted');ax.set_ylabel('Actual');  
+ax.set_title('Confusion Matrix');
+TN, FP, FN, TP = confusion_matrix(yv2_test, score).ravel()
+
+print('True Positive(TP)  = ', TP)
+print('False Positive(FP) = ', FP)
+print('True Negative(TN)  = ', TN)
+print('False Negative(FN) = ', FN)
+
+accuracy =  (TP+TN) /(TP+FP+TN+FN)
+
+print('Accuracy of the binary classification = {:0.3f}'.format(accuracy))
+
+model_rfct = RandomForestClassifier()
+model_rfct.fit(xv2_train, yv2_train)
+dump(model_rfct, open('rfctmodel.pkl', 'wb'))
+
+model_rfct = pickle.load(open('rfctmodel.pkl', 'rb'))
+
+score = model_rfct.predict(xv2_test)
+result = accuracy_score(yv2_test,score)
+print('Test Accuracy:', result)
+
+cm=confusion_matrix(yv2_test, score) #you will need to change the latter to your desired output
+cm
+import seaborn as sns
+import matplotlib.pyplot as plt   
+
+ax= plt.subplot()
+sns.heatmap(cm, annot=True, fmt='g', ax=ax);  #Don't worry too much about the arguments here - we will return to this! 
+
+# labels, title and ticks
+ax.set_xlabel('Predicted');ax.set_ylabel('Actual');  
+ax.set_title('Confusion Matrix');
+TN, FP, FN, TP = confusion_matrix(yv2_test, score).ravel()
+
+print('True Positive(TP)  = ', TP)
+print('False Positive(FP) = ', FP)
+print('True Negative(TN)  = ', TN)
+print('False Negative(FN) = ', FN)
+
+accuracy =  (TP+TN) /(TP+FP+TN+FN)
+
+print('Accuracy of the binary classification = {:0.3f}'.format(accuracy))
+
+<p style= "color:blue">After adding lemmatization to the Validation Dataset and running the classifiers, we saw a difference in accuracy, which improved for both the Decision Tree and the Random Forest. We are then saving Random Forest model that will be applied on Test data.</p>
+
+<h3 style= "color:blue">Cross Validation</h3>
+<p>Cross Validation helps in finding the optimal value of hyperparameters to increase the efficiency of the algorithm.</p>
+<p>Merging training dataset and validation dataset to perform K-Fold cross validation on it.</p>
+
+merged_dfx = pd.concat([X_train, X_valid], axis=0) #merging x train and x valid datasets
+
+merged_dfx
+
+merged_dfx.pop('date')
+
+merged_dfx.pop('authors')
+
+merged_dfx.pop('link')
+
+merged_dfx.pop('short_description')
+
+merged_dfx.pop('news_length')
+
+merged_dfx.pop('category_id')
+
+merged_dfx
+
+#converting the data to lowercase
+merged_dfx['headline'] = merged_dfx['headline'].str.lower()
+merged_dfx
+
+tfidf_vect = TfidfVectorizer(analyzer='word', max_features=3000)
+
+xdfx_tfidf = tfidf_vect.fit_transform(merged_dfx['headline'])
+
+xdfx_features = pd.DataFrame(xdfx_tfidf.toarray())
+
+xdfx_features
+
+merged_dfy = pd.concat([traindata['category_id'], validdata['category_id']], axis=0) #merging y train and y valid datasets
+
+merged_dfy
+
+<p style= "color:blue">K-Fold Cross Validation for Decision Tree Classifier </p>
+
+model_dtct = pickle.load(open('dtctmodel.pkl', 'rb'))
+#dt = DecisionTreeClassifier()
+
+from sklearn.model_selection import KFold
+folder = KFold(n_splits=5)
+
+from sklearn.model_selection import cross_val_score
+results = cross_val_score(model_dtct, xdfx_features, merged_dfy, cv = folder)
+results
+
+output = pd.DataFrame(results, columns=["Accuracy_per_fold"]) #Accuracy Score for 5 folds
+output
+
+# mean of the Accuracy_per_fold column!
+av_val = output["Accuracy_per_fold"].mean()*100
+print("The average accuracy across folds is {}%".format(av_val))
+
+<p style= "color:blue">K-Fold Cross Validation for Random Forest Classifier </p>
+
+#rf = RandomForestClassifier()
+model_rfct = pickle.load(open('rfctmodel.pkl', 'rb'))
+
+from sklearn.model_selection import KFold
+folder = KFold(n_splits=5)
+
+from sklearn.model_selection import cross_val_score
+results = cross_val_score(model_rfct, xdfx_features, merged_dfy, cv = folder)
+results
+
+output = pd.DataFrame(results, columns=["Accuracy_per_fold"])
+output
+
+# mean of the column!
+av_val = output["Accuracy_per_fold"].mean()*100
+print("The average accuracy across folds is {}%".format(av_val))
+
+<p style= "color:green">After running cross validation with both classifiers Decision Tree and Random Forest, we can see that the Random Forest classifier produces a better result (about 90%). Random Forest makes strong predictions that are easy to understand, and it can handle enormous datasets efficiently. Most significantly, we can observe that it outperforms the decision tree algorithm in terms of accuracy in forecasting outcomes. The only disadvantage of Random Forest here is that it takes longer to run than Decision Tree.</p>
+
+<h3>Loading the Test Dataset and performing Pre-processing on it</h3>
+
+#loading the dataset
+testdata = pd.read_csv("test.csv",header=0)
+testdata
+
+testdata['headline'] = testdata['headline'] .str.lower() #converting to lowercase
+
+testdata['headline'] = testdata['headline'].str.replace(r'[^\w\s]+','') #removing punctuations
+
+#removing stopwords
+stop = stopwords.words('english')
+
+testdata['headline'] = testdata['headline'].apply(lambda x: ' '.join([word for word in str(x).split() if word not in (stop)]))
+
+lemmatizer = nltk.stem.WordNetLemmatizer()
+testdata['headline'] = [lemmatizer.lemmatize(t) for t in testdata['headline']] #performing lemmatization 
+
+testdata['category_id'].dtypes
+
+tfidf_vect = TfidfVectorizer(analyzer='word', max_features=3000)
+
+xtest_tfidf = tfidf_vect.fit_transform(testdata['headline'])
+
+xtest_features = pd.DataFrame(xtest_tfidf.toarray())
+
+xtest_features
+
+<p style= "color:blue">On the test dataset, we will use the Random Forest Classifier because it has exhibited the highest accuracy for all types of data.</p>
+
+xtest_train, xtest_test, ytest_train, ytest_test = train_test_split(xtest_features, testdata['category_id'], test_size=0.5)
+
+ytest_test.dtypes
+
+ytest_test.shape
+
+ytest_train.shape
+
+model_rfct = RandomForestClassifier()
+model_rfct.fit(xtest_train, ytest_train)
+dump(model_rfct, open('rfctmodel.pkl', 'wb'))
+
+model_rfct = pickle.load(open('rfctmodel.pkl', 'rb'))
+
+score = model_rfct.predict(xtest_test)
+result = accuracy_score(ytest_test,score)
+print('Test Accuracy:', result)
+
+cm=confusion_matrix(ytest_test, score) #you will need to change the latter to your desired output
+cm
+import seaborn as sns
+import matplotlib.pyplot as plt   
+
+ax= plt.subplot()
+sns.heatmap(cm, annot=True, fmt='g', ax=ax);  #Don't worry too much about the arguments here - we will return to this! 
+
+# labels, title and ticks
+ax.set_xlabel('Predicted');ax.set_ylabel('Actual');  
+ax.set_title('Confusion Matrix');
+TN, FP, FN, TP = confusion_matrix(ytest_test, score).ravel()
+
+print('True Positive(TP)  = ', TP)
+print('False Positive(FP) = ', FP)
+print('True Negative(TN)  = ', TN)
+print('False Negative(FN) = ', FN)
+
+accuracy =  (TP+TN) /(TP+FP+TN+FN)
+
+print('Accuracy of the binary classification = {:0.3f}'.format(accuracy))
+
+<p style= "color:blue">We choose best model from modified Validation data and implemented it on the test data. Validation data Random Forest Classifier provided around higher accuracy, whereas test data provided approximately 76 percent accuracy. This is because our valid dataset is bigger, implying that it will provide good accuracy.</p>
+
+
+<p style= "color:blue">Merging Train and Valid data and performing Binary Classification on it.</p>
+
+merged_dfx
+
+merged_dfy
+
+merged_dfy.unique()
+
+tfidf_vect = TfidfVectorizer(analyzer='word', max_features=3000)
+
+merged_dfx_tfidf = tfidf_vect.fit_transform(merged_dfx['headline'])
+
+merged_dfx_features = pd.DataFrame(merged_dfx_tfidf.toarray())
+
+merged_dfx_features
+
+merged_dfy
+
+x_train_combined, x_test_combined, y_train_combined, y_test_combined = train_test_split(merged_dfx_features, merged_dfy, test_size=0.5)
+
+model_rfct = RandomForestClassifier()
+model_rfct.fit(x_train_combined, y_train_combined)
+dump(model_rfct, open('rfctmodel.pkl', 'wb'))
+
+model_rfct = pickle.load(open('rfctmodel.pkl', 'rb'))
+
+score = model_rfct.predict(x_test_combined)
+result = accuracy_score(y_test_combined,score)
+print('Test Accuracy:', result)
+
+<p style= "color:blue">Applying saved model from the merged dataset on test dataset</p>
+
+testdata
+
+model_rfct = pickle.load(open('rfctmodel.pkl', 'rb'))
+
+score = model_rfct.predict(xtest_test)
+result = accuracy_score(ytest_test,score)
+print('Test Accuracy:', result)
+
+<p style= "color:blue"><b>After re-training our model using a larger dataset, i.e., train plus valid, we applied that model to the test dataset and obtained an accuracy which is lower than the previous model we used on test data. We may conclude from this that the model saved using validation data produced a better outcome for the test data than the merged data model.</b></p>
+
+<h1 style= "color:Green">DEEP LEARNING</h1>
+  <p> Source : <a href = "https://github.com/rootally/News-Category-Classification-with-BERT/blob/master/Models.ipynb">Github</a> </p>
+</nav>
+
+#loading the dataset
+dataDL = pd.read_csv("20204585.csv",encoding='Latin1',dtype=str)
+dataDL.head()
+
+dataDL.drop(['Unnamed: 0'],axis=1, inplace = True)
+
+dataDL = dataDL.dropna() 
+
+dataDL
+
+cates = dataDL.groupby('category')
+print("total categories:", cates.ngroups)
+print(cates.size())
+
+import re
+def clean_str(stringDL):
+    """
+    Tokenization/string cleaning for dataset
+    Every dataset is lower cased except
+    """
+    stringDL = re.sub(r"[^A-Za-z0-9(),!?\'\`]", " ", stringDL)
+
+    return stringDL.lower()
+
+# using headlines
+
+dataDL['text'] = dataDL.headline 
+
+# tokenizing the data
+
+tokenizer = Tokenizer()
+tokenizer.fit_on_texts(dataDL.text)
+xDL = tokenizer.texts_to_sequences(dataDL.text)
+dataDL['words'] = xDL
+
+# delete some empty and short data
+
+dataDL['word_length'] = dataDL.words.apply(lambda i: len(i))
+dataDL = dataDL[dataDL.word_length >= 5]
+
+dataDL = dataDL.drop(dataDL.columns[[2,3,4,5]], axis=1)
+
+dataDL.shape
+#saving the clean data
+dataDL.to_csv('cleanedDL.csv',encoding='utf-8')
+dataDL.head()
+
+dataDL1 = pd.read_csv('cleanedDL.csv')
+xDL=dataDL1.sample(frac=0.8,random_state=200)
+test=dataDL1.drop(xDL.index)
+train=xDL.sample(frac=0.8,random_state=200)
+val=xDL.drop(train.index)
+
+print(train.shape)
+print(val.shape)
+print(test.shape)
+
+clean_dataDL = pd.read_csv('cleanedDL.csv')
+sent_lens = []
+sent_nums = []
+for idx in range(clean_dataDL.text.shape[0]):
+    clean_dataDL.text[idx] = clean_str(clean_dataDL.text[idx])
+
+clean_dataDL.head()
+
+train1=dataDL.sample(frac=0.8,random_state=200)
+test1=dataDL.drop(train1.index)
+
+dataDL.word_length.describe()
+
+<p style= "color:green">Maxlen- maximum length of all sequences</p>
+<p style= "color:green">pad_sequences is used to ensure that all sequences in a list have the same length.</p>
+<p style= "color:green">To fit the data into any neural network, we need to convert the data into sequence matrices. For this, we are using the pad_sequence module from keras.preprocessing.</p>
+
+from tensorflow.keras.preprocessing import sequence
+maxlen = 50 
+xDL = list(sequence.pad_sequences(dataDL.words, maxlen=maxlen)) 
+
+dataDL
+
+categories = dataDL.groupby('category').size().index.tolist()
+category_int = {}
+int_category = {}
+for i, k in enumerate(categories):
+    category_int.update({k:i})
+    int_category.update({i:k})
+
+print(category_int)
+print(int_category)
+dataDL['c2id'] = dataDL['category'].apply(lambda x: category_int[x])
+
+<p style= "color:green">Two popular examples of methods of learning word embeddings from text include:</p>
+
+<p style= "color:green">1. Word2Vec.</p>
+<p style= "color:green">2. GloVe.</p>
+<p style= "color:green">Here we are using GloVe an unsupervised learning algorithm for obtaining vector representations for words. Training is performed on aggregated global word-word co-occurrence statistics from a corpus, and the resulting representations showcase interesting linear substructures of the word vector space.It basically provides 100 dimensinal vector. Every dimension represents different feature of word.</p>
+
+word_index = tokenizer.word_index
+EMBEDDING_DIM = 100
+# importing the GloVe word embeddings
+embeddings_index = {}
+f = open('glove.6B.100d.txt',"r",encoding="utf8") 
+for line in f:
+    values = line.split()
+    word = ''.join(values[:-100])
+    coefs = np.asarray(values[-100:], dtype='float32')
+    embeddings_index[word] = coefs
+f.close()
+
+print('Found %s unique tokens.' % len(word_index))
+print('Total %s word vectors.' % len(embeddings_index))
+
+<p style= "color:green">Word Embeddings provide a dense representation of words and their relative meanings. They are an improvement over sparse representations used in simpler bag of word model representations.</p>
+
+embedding_matrix = np.zeros((len(word_index) + 1, EMBEDDING_DIM))
+for word, i in word_index.items():
+    embedding_vector = embeddings_index.get(word)
+    if embedding_vector is not None:
+        embedding_matrix[i] = embedding_vector
+
+embedding_layer = Embedding(len(word_index)+1,
+                            EMBEDDING_DIM,
+                            embeddings_initializer=Constant(embedding_matrix),
+                            input_length=maxlen,
+                            trainable=False) # Initializer for the embeddings matrix
+
+xDL = np.array(xDL)
+Y = np_utils.to_categorical(list(dataDL.c2id))
+
+# and split to training set and validation set
+
+seed = 29
+x_trainDL, x_valDL, y_trainDL, y_valDL = train_test_split(xDL, Y, test_size=0.2, random_state=seed)
+
+<p style= "color:green">Next, we are going to make a model with bi-LSTM layer. The CNN LSTM architecture involves using Convolutional Neural Network (CNN) layers for feature extraction on input data combined with LSTMs to support sequence prediction. Bidirectional LSTMs train two instead of one LSTMs on the input sequence.</p>
+<p style= "color:green">Here in the code below we have a regular neural network  and we have added a bi-LSTM layer using keras. Keras of tensor flow provides a new class [bidirectional] to make bi-LSTM.</p>
+<nav>
+    <p> Source : <a href = "https://www.kaggle.com/eashish/bidirectional-gru-with-convolution">Kaggle</a> </p>
+</nav>
+
+# Bidrectional LSTM with convolution
+# from https://www.kaggle.com/eashish/bidirectional-gru-with-convolution
+inp = Input(shape=(maxlen,), dtype='int32')
+x = embedding_layer(inp)
+x = SpatialDropout1D(0.2)(x)
+x = Bidirectional(GRU(128, return_sequences=True, dropout=0.1, recurrent_dropout=0.1))(x)
+x = Conv1D(64, kernel_size=3)(x)
+avg_pool = GlobalAveragePooling1D()(x)
+max_pool = GlobalMaxPooling1D()(x)
+x = concatenate([avg_pool, max_pool])
+outp = Dense(len(int_category), activation="softmax")(x)
+
+BiGRU = Model(inp, outp)
+BiGRU.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['acc'])
+
+BiGRU.summary()
+
+<p style= "color:green">In the next step we will fit the model with data that we loaded from the Keras.</p>
+
+bigru_history = BiGRU.fit(x_trainDL, 
+                          y_trainDL, 
+                          batch_size=128, 
+                          epochs=10, 
+                          validation_data=(x_valDL, y_valDL))
+
+<p style= "color:green">Here we can see that we have trained our model with training data set with 10 epochs. We can use plots to know the model’s performance. </p>
+<p style= "color:green">Here we can see the performance of the bi-LSTM.</p>
+
+plt.rcParams['figure.figsize'] = (6,6)
+
+acc = bigru_history.history['acc']
+val_acc = bigru_history.history['val_acc']
+loss = bigru_history.history['loss']
+val_loss = bigru_history.history['val_loss']
+epochs = range(1, len(acc) + 1)
+
+# comparing the training and validation accuracy
+plt.title('Training and validation accuracy')
+plt.plot(epochs, acc, 'red', label='Training acc')
+plt.plot(epochs, val_acc, 'blue', label='Validation acc')
+plt.legend()
+
+# comparing the training and validation loss
+plt.figure()
+plt.title('Training and validation loss')
+plt.plot(epochs, loss, 'red', label='Training loss')
+plt.plot(epochs, val_loss, 'blue', label='Validation loss')
+plt.legend()
+
+plt.show()
+
+<p style= "color:green">From the plotted graph we can see that validation loss: 0.14 and Validation Accuracy: 0.94, The accuracy line is roughly parallel to the training line, and it is likewise relatively low in the case of loss.
