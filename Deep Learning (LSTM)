@@ -1,0 +1,168 @@
+#loading the dataset
+dataDL = pd.read_csv("20204585.csv",encoding='Latin1',dtype=str)
+dataDL.head()
+
+dataDL.drop(['Unnamed: 0'],axis=1, inplace = True)
+
+dataDL = dataDL.dropna() 
+
+dataDL
+
+cates = dataDL.groupby('category')
+print("total categories:", cates.ngroups)
+print(cates.size())
+
+import re
+def clean_str(stringDL):
+    """
+    Tokenization/string cleaning for dataset
+    Every dataset is lower cased except
+    """
+    stringDL = re.sub(r"[^A-Za-z0-9(),!?\'\`]", " ", stringDL)
+
+    return stringDL.lower()
+    
+# using headlines
+
+dataDL['text'] = dataDL.headline 
+
+# tokenizing the data
+
+tokenizer = Tokenizer()
+tokenizer.fit_on_texts(dataDL.text)
+xDL = tokenizer.texts_to_sequences(dataDL.text)
+dataDL['words'] = xDL
+
+# delete some empty and short data
+
+dataDL['word_length'] = dataDL.words.apply(lambda i: len(i))
+dataDL = dataDL[dataDL.word_length >= 5]
+
+dataDL = dataDL.drop(dataDL.columns[[2,3,4,5]], axis=1)
+
+dataDL.shape
+#saving the clean data
+dataDL.to_csv('cleanedDL.csv',encoding='utf-8')
+dataDL.head()
+
+dataDL1 = pd.read_csv('cleanedDL.csv')
+xDL=dataDL1.sample(frac=0.8,random_state=200)
+test=dataDL1.drop(xDL.index)
+train=xDL.sample(frac=0.8,random_state=200)
+val=xDL.drop(train.index)
+
+print(train.shape)
+print(val.shape)
+print(test.shape)
+
+clean_dataDL = pd.read_csv('cleanedDL.csv')
+sent_lens = []
+sent_nums = []
+for idx in range(clean_dataDL.text.shape[0]):
+    clean_dataDL.text[idx] = clean_str(clean_dataDL.text[idx])
+
+clean_dataDL.head()
+
+train1=dataDL.sample(frac=0.8,random_state=200)
+test1=dataDL.drop(train1.index)
+
+dataDL.word_length.describe()
+
+from tensorflow.keras.preprocessing import sequence
+maxlen = 50 
+xDL = list(sequence.pad_sequences(dataDL.words, maxlen=maxlen)) 
+
+dataDL
+
+categories = dataDL.groupby('category').size().index.tolist()
+category_int = {}
+int_category = {}
+for i, k in enumerate(categories):
+    category_int.update({k:i})
+    int_category.update({i:k})
+
+print(category_int)
+print(int_category)
+dataDL['c2id'] = dataDL['category'].apply(lambda x: category_int[x])
+
+word_index = tokenizer.word_index
+EMBEDDING_DIM = 100
+# importing the GloVe word embeddings
+embeddings_index = {}
+f = open('glove.6B.100d.txt',"r",encoding="utf8") 
+for line in f:
+    values = line.split()
+    word = ''.join(values[:-100])
+    coefs = np.asarray(values[-100:], dtype='float32')
+    embeddings_index[word] = coefs
+f.close()
+
+print('Found %s unique tokens.' % len(word_index))
+print('Total %s word vectors.' % len(embeddings_index))
+
+embedding_matrix = np.zeros((len(word_index) + 1, EMBEDDING_DIM))
+for word, i in word_index.items():
+    embedding_vector = embeddings_index.get(word)
+    if embedding_vector is not None:
+        embedding_matrix[i] = embedding_vector
+
+embedding_layer = Embedding(len(word_index)+1,
+                            EMBEDDING_DIM,
+                            embeddings_initializer=Constant(embedding_matrix),
+                            input_length=maxlen,
+                            trainable=False) # Initializer for the embeddings matrix
+                            
+xDL = np.array(xDL)
+Y = np_utils.to_categorical(list(dataDL.c2id))
+
+# and split to training set and validation set
+
+seed = 29
+x_trainDL, x_valDL, y_trainDL, y_valDL = train_test_split(xDL, Y, test_size=0.2, random_state=seed)
+
+# Bidrectional LSTM with convolution
+# from https://www.kaggle.com/eashish/bidirectional-gru-with-convolution
+inp = Input(shape=(maxlen,), dtype='int32')
+x = embedding_layer(inp)
+x = SpatialDropout1D(0.2)(x)
+x = Bidirectional(GRU(128, return_sequences=True, dropout=0.1, recurrent_dropout=0.1))(x)
+x = Conv1D(64, kernel_size=3)(x)
+avg_pool = GlobalAveragePooling1D()(x)
+max_pool = GlobalMaxPooling1D()(x)
+x = concatenate([avg_pool, max_pool])
+outp = Dense(len(int_category), activation="softmax")(x)
+
+BiGRU = Model(inp, outp)
+BiGRU.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['acc'])
+
+BiGRU.summary()
+
+bigru_history = BiGRU.fit(x_trainDL, 
+                          y_trainDL, 
+                          batch_size=128, 
+                          epochs=10, 
+                          validation_data=(x_valDL, y_valDL))
+                          
+plt.rcParams['figure.figsize'] = (6,6)
+
+acc = bigru_history.history['acc']
+val_acc = bigru_history.history['val_acc']
+loss = bigru_history.history['loss']
+val_loss = bigru_history.history['val_loss']
+epochs = range(1, len(acc) + 1)
+
+# comparing the training and validation accuracy
+plt.title('Training and validation accuracy')
+plt.plot(epochs, acc, 'red', label='Training acc')
+plt.plot(epochs, val_acc, 'blue', label='Validation acc')
+plt.legend()
+
+# comparing the training and validation loss
+plt.figure()
+plt.title('Training and validation loss')
+plt.plot(epochs, loss, 'red', label='Training loss')
+plt.plot(epochs, val_loss, 'blue', label='Validation loss')
+plt.legend()
+
+plt.show()
+
