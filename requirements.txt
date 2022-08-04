@@ -1,0 +1,79 @@
+# importing pandas package
+import pandas as pandasForSortingCSV
+# Importing the  dependencies.
+import nltk
+import matplotlib
+import numpy as np
+from nltk import *
+from nltk.corpus import stopwords
+import pandas as pd
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+import re
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('wordnet')
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+from gensim.models import Word2Vec
+from sklearn.pipeline import Pipeline
+from sklearn.svm import SVC
+from sklearn.naive_bayes import GaussianNB
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.neural_network import MLPClassifier
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
+import warnings
+warnings.filterwarnings("ignore")
+# from wordcloud import WordCloud
+%matplotlib inline
+plt.rcParams['figure.figsize'] = (8,6)
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_selection import chi2
+import numpy as np
+from nltk.corpus import stopwords
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.naive_bayes import MultinomialNB
+# to convert the text into vectors
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, classification_report, f1_score, confusion_matrix
+import pickle
+from pickle import dump
+import seaborn as sns
+import matplotlib.pyplot as plt   
+import pandas as pd   
+from IPython.display import display_html 
+import nltk
+nltk.download('omw-1.4')
+from sklearn.model_selection import KFold
+from sklearn.model_selection import cross_val_score
+import numpy as np # linear algebra
+import pandas as pd # data processing, CSV file I/O 
+import matplotlib.pyplot as plt
+plt.rcParams['figure.figsize'] = (6,6)
+from keras import backend as K
+from tensorflow.keras.layers import Layer, InputSpec
+from keras import initializers, regularizers, constraints
+from keras.layers import Dense, Input, LSTM, Bidirectional, Activation, Conv1D, GRU, TimeDistributed
+from keras.layers import Dropout, Embedding, GlobalMaxPooling1D, MaxPooling1D, Add, Flatten, SpatialDropout1D
+from keras.layers import GlobalAveragePooling1D, BatchNormalization, concatenate
+from keras.layers import Reshape, Concatenate, Lambda, Average
+from keras.models import Sequential, Model, load_model
+from keras.callbacks import ModelCheckpoint
+from keras.initializers import Constant
+from tensorflow.keras.layers import concatenate 
+from keras.preprocessing import sequence
+from keras.preprocessing.text import Tokenizer, text_to_word_sequence
+from keras.utils import np_utils
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix
+import os
+from tensorflow.keras.preprocessing import sequence
+  
